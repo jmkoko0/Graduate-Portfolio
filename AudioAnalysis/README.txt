@@ -1,0 +1,3 @@
+This MATLAB code is a very simple record/playback with plots of the time and frequency domains of the recorded signal. It is displayed best when the user plays a constant note instead of several notes as the dominant frequency can be easily seen, but still functions properly with any audio signal. It does contain an auto-playback feature which serves as a verification of the correct I/O devices, as initially my laptop did not cooperate with my audio interface. 
+
+I originally intended to use this to look at how different instruments have different degrees of overtones for the same note, but it has since morphed into a tool to analyze different clarinet and saxophone mouthpieces to achieve an ideal tone quality :)

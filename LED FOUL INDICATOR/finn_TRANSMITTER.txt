@@ -1,0 +1,65 @@
+#include <SPI.h>
+#include <nRF24L01.h>
+#include <RF24.h>
+
+RF24 radio(8, 9); // CE, CSN
+const uint64_t address = 0xE8E8F0F0E1LL;
+
+const int buttonPinGreen = 2;  // green LED trigger
+const int buttonPinRed = 3;    // override button
+
+struct Payload {
+  bool greenState;
+  bool redState;
+};
+
+Payload payload = {false, false};
+unsigned long startTime = 0;
+
+void setup() {
+  Serial.begin(9600);
+  pinMode(buttonPinGreen, INPUT_PULLUP);
+  pinMode(buttonPinRed, INPUT_PULLUP);
+  radio.begin();
+  radio.openWritingPipe(address);
+  radio.setPALevel(RF24_PA_LOW);
+  radio.stopListening();
+}
+
+void loop() {
+  bool greenPressed = (digitalRead(buttonPinGreen) == LOW);
+  bool redPressed = (digitalRead(buttonPinRed) == LOW);
+
+  // Green button pressed -> turn on green, start timer
+  if (greenPressed && !payload.greenState && !payload.redState) {
+    payload.greenState = true;
+    payload.redState = false;
+    startTime = millis();
+    radio.write(&payload, sizeof(payload));
+    Serial.println("Sent: GREEN ON");
+  }
+
+  // After 10 seconds, turn green off (if not overridden)
+  if (payload.greenState && (millis() - startTime >= 6000) && !payload.redState) {
+    payload.greenState = false;
+    radio.write(&payload, sizeof(payload));
+    Serial.println("Sent: GREEN OFF");
+  }
+
+  // Red override button pressed
+  if (redPressed && !payload.redState) {
+    payload.redState = true;
+    payload.greenState = false;
+    radio.write(&payload, sizeof(payload));
+    Serial.println("Sent: RED OVERRIDE ON");
+  }
+
+  // Release red → turn both off
+  if (!redPressed && payload.redState) {
+    payload.redState = false;
+    payload.greenState = false;
+    radio.write(&payload, sizeof(payload));
+    Serial.println("Sent: RED OVERRIDE OFF");
+  }
+}
+

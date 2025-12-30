@@ -1,0 +1,48 @@
+#include <SPI.h>
+#include <nRF24L01.h>
+#include <RF24.h>
+
+RF24 radio(8, 9);
+const uint64_t address = 0xE8E8F0F0E1LL;
+
+const int greenLedPin = 3;
+const int redLedPin = 4;
+
+struct Payload {
+  bool greenState;
+  bool redState;
+};
+
+Payload payload;
+
+void setup() {
+  Serial.begin(9600);
+  pinMode(greenLedPin, OUTPUT);
+  pinMode(redLedPin, OUTPUT);
+
+  if (!radio.begin()) {
+    Serial.println("Radio hardware not responding!");
+    while (1);
+  }
+
+  radio.openReadingPipe(1, address);
+  radio.setPALevel(RF24_PA_LOW);
+  radio.startListening();
+  Serial.println("Receiver ready and listening...");
+}
+
+void loop() {
+  if (radio.available()) {
+    radio.read(&payload, sizeof(payload));
+    digitalWrite(greenLedPin, payload.greenState);
+    digitalWrite(redLedPin, payload.redState);
+
+    if (payload.redState)
+      Serial.println("RED OVERRIDE ON");
+    else if (payload.greenState)
+      Serial.println("GREEN ON");
+    else
+      Serial.println("ALL OFF");
+  }
+}
+
